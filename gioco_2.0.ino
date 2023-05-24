@@ -3,7 +3,7 @@
 LiquidCrystal lcd( 12, 11, 5, 4, 3, 2);//definisci i pin del display
 
 #define JOYSTICK_X A0 //definisci i pin del joystick
-
+#define JOYSTICK_Y A1
 
 byte ostacolo [] { //crea l'ostacolo
   B11111,
@@ -27,8 +27,7 @@ byte personaggio [] = { // crea il personaggio
     B10011,
 };
 
-
-const int SALTA_PULSANTE_PIN = 6; // definisci il pin dei bottone
+int START_PIN = 6;
 //definisci tutte le variabili
 int JoystickPositionx;
 int JoystickPositiony;
@@ -40,26 +39,40 @@ int LastRandom1;
 int LastRandom2;
 int LastRandomPosition;
 int punteggio = 0;
+int start;
 
 
 
 
  void setup() {
-   lcd.begin(16, 2);//inizializza il displau
+   lcd.begin(16, 2);//inizializza il display
    Serial.begin(9600);//inizializza il seriale
    //crea i personaggi
    lcd.createChar(0, ostacolo);
    lcd.createChar(1, personaggio);
-   randomSeed(F(__TIME__));
-   pinMode(SALTA_PULSANTE_PIN, INPUT);
+   //randomSeed(F(__DATE__));
+   randomSeed(punteggio);
+   pinMode(START_PIN, INPUT);
+    lcd.setCursor(0, 0);
+    lcd.print("PREMI PER");
+    lcd.setCursor(0, 1);
+    lcd.print("GIOCARE");
   }
 
  void loop() {
-    lcd.setCursor(14, 0);
-   lcd.print("PT");
+   if(digitalRead(START_PIN) == HIGH){
+     start = 1;
+     lcd.clear();
+   }
+
+   if(start == 1){
+   lcd.setCursor(14, 0);
+  lcd.print("PT");
   Movimento_ostacolo();
+  salta();
   Destra_sinistra();
   ContaPunti();
+}
 
   if(((ObstaclePosition1 == JoystickPositionx) && (LastRandom1 == JoystickPositiony)) 
         || ((ObstaclePosition2 == JoystickPositionx) && (LastRandom2 == JoystickPositiony))){
@@ -68,8 +81,14 @@ int punteggio = 0;
     lcd.print("GAME OVER");
     delay(10000);
     lcd.noDisplay();
-
+    start = 0;
+    lcd.display();
+    lcd.setCursor(0, 0);
+    lcd.print("PREMI PER");
+    lcd.setCursor(0, 1);
+    lcd.print("GIOCARE");
   }
+
  }
 
 
@@ -78,7 +97,6 @@ int punteggio = 0;
 
 
 void Movimento_ostacolo(){
-  int Random = random(500, 2000);
     Primo_ostacolo(); 
     Secondo_ostacolo();
 }
@@ -89,7 +107,7 @@ void Movimento_ostacolo(){
         if(ObstaclePosition1 == 12){
             LastRandom1 = randomRiga;
         } 
-    
+
   lcd.setCursor(ObstaclePosition1, LastRandom1);
   lcd.write(byte(0));
    lcd.setCursor(ObstaclePosition1 + 2, LastRandom1);
@@ -135,31 +153,15 @@ void Destra_sinistra(){
           lcd.write(byte(1));
           lcd.setCursor(JoystickPositionx - 1, JoystickPositiony);
           lcd.print(SpazioVuoto);
-              if(digitalRead(SALTA_PULSANTE_PIN) == HIGH){
-                  if(JoystickPositiony == 1){
-                        JoystickPositiony = 0;
-                        lcd.setCursor(JoystickPositionx, JoystickPositiony);
-                        lcd.write(byte(1));
-                        lcd.setCursor(JoystickPositionx , 1);
-                        lcd.print(SpazioVuoto);
-     
-                  }else{
-                         JoystickPositiony = 1;
-                         lcd.setCursor(JoystickPositionx, JoystickPositiony);
-                         lcd.write(byte(1));
-                         lcd.setCursor(JoystickPositionx , 0);
-                        lcd.print(SpazioVuoto);
-                         }
-                  
-              
-              }
+        }
           if(JoystickPositionx > 13){
           JoystickPositionx = 13;
           lcd.setCursor(13, JoystickPositiony);
           lcd.write(byte(1));
         }
+
     
-}
+
 
 
  if(analogRead(x) > 700){
@@ -169,56 +171,41 @@ void Destra_sinistra(){
          lcd.write(byte(1));
          lcd.setCursor(JoystickPositionx + 1, JoystickPositiony);
          lcd.print(SpazioVuoto);
-              if(digitalRead(SALTA_PULSANTE_PIN) == HIGH){
-                  if(JoystickPositiony == 1){
-                        JoystickPositiony = 0;
-                        lcd.setCursor(JoystickPositionx, JoystickPositiony);
-                        lcd.write(byte(1));
-                        lcd.setCursor(JoystickPositionx + 1, 1);
-                        lcd.print(SpazioVuoto);
-     
-                  }else{
-                         JoystickPositiony = 1;
-                         lcd.setCursor(JoystickPositionx, JoystickPositiony);
-                         lcd.write(byte(1));
-                         lcd.setCursor(JoystickPositionx + 1, 0);
-                        lcd.print(SpazioVuoto);
-                         
-                  }
               }
+
         if(JoystickPositionx < 0){
              JoystickPositionx = 0;
              lcd.setCursor(0, JoystickPositiony);
              lcd.write(byte(1));
         }
   
-}
+
 
  if(analogRead(x) < 600 && (x) > 400){
         lcd.setCursor(JoystickPositionx, JoystickPositiony);
          lcd.write(byte(1));
-             if(digitalRead(SALTA_PULSANTE_PIN) == HIGH){
-                  if(JoystickPositiony == 1){
+  }
+}  
+
+
+
+
+void salta(){
+   int y = analogRead(JOYSTICK_Y);
+     if(analogRead(y) <  400){
                         JoystickPositiony = 0;
                         lcd.setCursor(JoystickPositionx, JoystickPositiony);
                         lcd.write(byte(1));
-                        lcd.setCursor(JoystickPositionx, 1);
+                        lcd.setCursor(JoystickPositionx , 1);
                         lcd.print(SpazioVuoto);
      
-                  }else{
-                         
-                         JoystickPositiony = 1;
+                  }else if (analogRead(y) < 700) {
+                  JoystickPositiony = 1;
                          lcd.setCursor(JoystickPositionx, JoystickPositiony);
                          lcd.write(byte(1));
-                         lcd.setCursor(JoystickPositionx, 0);
+                         lcd.setCursor(JoystickPositionx , 0);
                         lcd.print(SpazioVuoto);
-                         
                   }
-
-            }
-}
- 
-
 }
 
 
@@ -226,5 +213,11 @@ void ContaPunti (){
   punteggio = punteggio + 1;
   lcd.setCursor(14, 1);
   lcd.print(punteggio);
+  if(punteggio == 100){
+    lcd.noDisplay();
+    lcd.display();
+    lcd.setCursor(7, 0);
+    lcd.print("HAI VINTO");
+  }
 }
 
