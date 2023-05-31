@@ -3,7 +3,17 @@
 LiquidCrystal lcd( 12, 11, 5, 4, 3, 2);//definisci i pin del display
 
 #define JOYSTICK_X A0 //definisci i pin del joystick
+#define JOYSTICK_Y A1
 
+
+
+#define NOTE_G4  392
+#define NOTE_A4  440
+#define NOTE_F4  349
+#define NOTE_C4  262
+#define NOTE_E4  330
+#define NOTE_D4  294
+#define NOTE_B3  247
 
 byte ostacolo [] { //crea l'ostacolo
   B11111,
@@ -28,7 +38,8 @@ byte personaggio [] = { // crea il personaggio
 };
 
 
-const int SALTA_PULSANTE_PIN = 6; // definisci il pin dei bottone
+int START_PIN = 6;
+int buzzerPin = 8;
 //definisci tutte le variabili
 int JoystickPositionx;
 int JoystickPositiony;
@@ -40,37 +51,43 @@ int LastRandom1;
 int LastRandom2;
 int LastRandomPosition;
 int punteggio = 0;
+int start;
+int contatore = 0;
 
 
 
 
  void setup() {
-   lcd.begin(16, 2);//inizializza il displau
+   lcd.begin(16, 2);//inizializza il display
    Serial.begin(9600);//inizializza il seriale
+    pinMode(buzzerPin, OUTPUT);
+   pinMode(START_PIN, INPUT);
    //crea i personaggi
    lcd.createChar(0, ostacolo);
    lcd.createChar(1, personaggio);
-   randomSeed(F(__TIME__));
-   pinMode(SALTA_PULSANTE_PIN, INPUT);
-  }
+
+    lcd.setCursor(0, 0);
+    lcd.print("PREMI PER");
+    lcd.setCursor(0, 1);
+    lcd.print("GIOCARE");
+}
 
  void loop() {
-    lcd.setCursor(14, 0);
-   lcd.print("PT");
+   randomSeed(punteggio);
+   if(digitalRead(START_PIN) == HIGH){
+     start = 1;
+     lcd.clear();
+   }
+
+   if(start == 1){
+   lcd.setCursor(14, 0);
+  lcd.print("PT");
   Movimento_ostacolo();
+  salta();
   Destra_sinistra();
   ContaPunti();
-
-  if(((ObstaclePosition1 == JoystickPositionx) && (LastRandom1 == JoystickPositiony)) 
-        || ((ObstaclePosition2 == JoystickPositionx) && (LastRandom2 == JoystickPositiony))){
-    lcd.clear();
-    lcd.setCursor(4, 0);
-    lcd.print("GAME OVER");
-    delay(10000);
-    lcd.noDisplay();
-
-  }
- }
+   }
+}
 
 
 
@@ -78,18 +95,22 @@ int punteggio = 0;
 
 
 void Movimento_ostacolo(){
-  int Random = random(500, 2000);
+  checkLoose();
     Primo_ostacolo(); 
+    checkLoose();
     Secondo_ostacolo();
+  checkLoose();
 }
  
+
+
  void Primo_ostacolo(){
 
      int randomRiga = random(2); //riga
         if(ObstaclePosition1 == 12){
             LastRandom1 = randomRiga;
         } 
-    
+
   lcd.setCursor(ObstaclePosition1, LastRandom1);
   lcd.write(byte(0));
    lcd.setCursor(ObstaclePosition1 + 2, LastRandom1);
@@ -101,6 +122,8 @@ void Movimento_ostacolo(){
     ObstaclePosition1 = 12;
   }
  }
+
+
 
 
  void Secondo_ostacolo(){
@@ -126,99 +149,77 @@ void Movimento_ostacolo(){
  
  
 void Destra_sinistra(){ 
+  checkLoose();
   int x = analogRead(JOYSTICK_X);// destra = 0, sinistra = 1000
   Serial.println(x);
-     if(analogRead(x) < 400){  
+     if(analogRead(x) > 700){  
           JoystickPositionx = JoystickPositionx + 1;
           delay(200);
           lcd.setCursor(JoystickPositionx, JoystickPositiony);
+          checkLoose();
           lcd.write(byte(1));
           lcd.setCursor(JoystickPositionx - 1, JoystickPositiony);
           lcd.print(SpazioVuoto);
-              if(digitalRead(SALTA_PULSANTE_PIN) == HIGH){
-                  if(JoystickPositiony == 1){
-                        JoystickPositiony = 0;
-                        lcd.setCursor(JoystickPositionx, JoystickPositiony);
-                        lcd.write(byte(1));
-                        lcd.setCursor(JoystickPositionx , 1);
-                        lcd.print(SpazioVuoto);
-     
-                  }else{
-                         JoystickPositiony = 1;
-                         lcd.setCursor(JoystickPositionx, JoystickPositiony);
-                         lcd.write(byte(1));
-                         lcd.setCursor(JoystickPositionx , 0);
-                        lcd.print(SpazioVuoto);
-                         }
-                  
-              
-              }
+        }
           if(JoystickPositionx > 13){
           JoystickPositionx = 13;
           lcd.setCursor(13, JoystickPositiony);
           lcd.write(byte(1));
         }
+
     
-}
 
 
- if(analogRead(x) > 700){
+
+ if(analogRead(x) < 300){
          JoystickPositionx = JoystickPositionx - 1;
          delay(200);
          lcd.setCursor(JoystickPositionx, JoystickPositiony);
+         checkLoose();
          lcd.write(byte(1));
          lcd.setCursor(JoystickPositionx + 1, JoystickPositiony);
          lcd.print(SpazioVuoto);
-              if(digitalRead(SALTA_PULSANTE_PIN) == HIGH){
-                  if(JoystickPositiony == 1){
-                        JoystickPositiony = 0;
-                        lcd.setCursor(JoystickPositionx, JoystickPositiony);
-                        lcd.write(byte(1));
-                        lcd.setCursor(JoystickPositionx + 1, 1);
-                        lcd.print(SpazioVuoto);
-     
-                  }else{
-                         JoystickPositiony = 1;
-                         lcd.setCursor(JoystickPositionx, JoystickPositiony);
-                         lcd.write(byte(1));
-                         lcd.setCursor(JoystickPositionx + 1, 0);
-                        lcd.print(SpazioVuoto);
-                         
-                  }
               }
+
         if(JoystickPositionx < 0){
              JoystickPositionx = 0;
              lcd.setCursor(0, JoystickPositiony);
              lcd.write(byte(1));
         }
   
-}
+
 
  if(analogRead(x) < 600 && (x) > 400){
         lcd.setCursor(JoystickPositionx, JoystickPositiony);
          lcd.write(byte(1));
-             if(digitalRead(SALTA_PULSANTE_PIN) == HIGH){
-                  if(JoystickPositiony == 1){
+  }
+}  
+
+
+
+
+void salta(){
+   int y = analogRead(JOYSTICK_Y);
+     if(analogRead(y) >  600){
                         JoystickPositiony = 0;
                         lcd.setCursor(JoystickPositionx, JoystickPositiony);
+                        checkLoose();
                         lcd.write(byte(1));
-                        lcd.setCursor(JoystickPositionx, 1);
+                        checkLoose();
+                        lcd.setCursor(JoystickPositionx , 1);
                         lcd.print(SpazioVuoto);
-     
-                  }else{
-                         
+    
+    
+     }
+
+     if (analogRead(y) < 400) {
                          JoystickPositiony = 1;
                          lcd.setCursor(JoystickPositionx, JoystickPositiony);
+                         checkLoose();
                          lcd.write(byte(1));
-                         lcd.setCursor(JoystickPositionx, 0);
+                         lcd.setCursor(JoystickPositionx , 0);
                         lcd.print(SpazioVuoto);
-                         
-                  }
-
-            }
-}
- 
-
+     }
 }
 
 
@@ -228,3 +229,40 @@ void ContaPunti (){
   lcd.print(punteggio);
 }
 
+
+
+void playGameOverSound() {
+  if(contatore == 0){
+  tone(buzzerPin, NOTE_G4, 300);   // Suona la nota G4 per 300 millisecondi
+  delay(300);              // Pausa di 300 millisecondi
+  tone(buzzerPin, NOTE_A4, 300);   // Suona la nota A4 per 300 millisecondi
+  delay(300);              // Pausa di 300 millisecondi
+  tone(buzzerPin, NOTE_F4, 400);   // Suona la nota F4 per 400 millisecondi
+  delay(400);              // Pausa di 400 millisecondi
+  tone(buzzerPin, NOTE_C4, 400);   // Suona la nota C4 per 400 millisecondi
+  delay(400);              // Pausa di 400 millisecondi
+  tone(buzzerPin, NOTE_E4, 300);   // Suona la nota E4 per 300 millisecondi
+  delay(300);              // Pausa di 300 millisecondi
+  tone(buzzerPin, NOTE_D4, 300);   // Suona la nota D4 per 300 millisecondi
+  delay(300);              // Pausa di 300 millisecondi
+  tone(buzzerPin, NOTE_B3, 600);   // Suona la nota B3 per 600 millisecondi
+  delay(600);              // Pausa di 600 millisecondi
+  contatore = 1;
+ }
+}
+
+
+void checkLoose (){
+  if(((ObstaclePosition1 == JoystickPositionx) && (LastRandom1 == JoystickPositiony)) 
+        || ((ObstaclePosition2 == JoystickPositionx) && (LastRandom2 == JoystickPositiony))){
+           playGameOverSound();
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("GAME OVER");
+      lcd.setCursor(4, 1);
+    lcd.print((punteggio) + String(" PUNTI"));
+    delay(8000);
+    lcd.clear();
+    lcd.noDisplay();
+  }
+}
