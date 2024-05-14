@@ -39,7 +39,7 @@ byte personaggio [] = { // crea il personaggio
 
 
 int START_PIN = 6;
-int buzzerPin = 0;
+int buzzerPin = 8;
 //definisci tutte le variabili
 int JoystickPositionx;
 int JoystickPositiony;
@@ -60,19 +60,20 @@ int contatore = 0;
  void setup() {
    lcd.begin(16, 2);//inizializza il display
    Serial.begin(9600);//inizializza il seriale
+    pinMode(buzzerPin, OUTPUT);
+   pinMode(START_PIN, INPUT);
    //crea i personaggi
    lcd.createChar(0, ostacolo);
    lcd.createChar(1, personaggio);
-   randomSeed(F(__TIME__));
-  pinMode(buzzerPin, OUTPUT);
-   pinMode(START_PIN, INPUT);
+
     lcd.setCursor(0, 0);
     lcd.print("PREMI PER");
     lcd.setCursor(0, 1);
     lcd.print("GIOCARE");
-  }
+}
 
  void loop() {
+   randomSeed(punteggio);
    if(digitalRead(START_PIN) == HIGH){
      start = 1;
      lcd.clear();
@@ -85,28 +86,8 @@ int contatore = 0;
   salta();
   Destra_sinistra();
   ContaPunti();
-}
-
-  if(((ObstaclePosition1 == JoystickPositionx) && (LastRandom1 == JoystickPositiony)) 
-        || ((ObstaclePosition2 == JoystickPositionx) && (LastRandom2 == JoystickPositiony))){
-          if(contatore == 0){
-           playGameOverSound();
-    lcd.clear();
-    lcd.setCursor(4, 0);
-    lcd.print("GAME OVER");
-    delay(8000);
-    lcd.clear();
-    contatore = 1;
    }
-
-    start = 0;
-    lcd.setCursor(0, 0);
-    lcd.print("PREMI PER");
-    lcd.setCursor(0, 1);
-    lcd.print("GIOCARE");
-    delay(2000);
-  }
- }
+}
 
 
 
@@ -114,10 +95,15 @@ int contatore = 0;
 
 
 void Movimento_ostacolo(){
+  checkLoose();
     Primo_ostacolo(); 
+    checkLoose();
     Secondo_ostacolo();
+  checkLoose();
 }
  
+
+
  void Primo_ostacolo(){
 
      int randomRiga = random(2); //riga
@@ -136,6 +122,8 @@ void Movimento_ostacolo(){
     ObstaclePosition1 = 12;
   }
  }
+
+
 
 
  void Secondo_ostacolo(){
@@ -161,12 +149,14 @@ void Movimento_ostacolo(){
  
  
 void Destra_sinistra(){ 
+  checkLoose();
   int x = analogRead(JOYSTICK_X);// destra = 0, sinistra = 1000
   Serial.println(x);
-     if(analogRead(x) < 300){  
+     if(analogRead(x) > 700){  
           JoystickPositionx = JoystickPositionx + 1;
           delay(200);
           lcd.setCursor(JoystickPositionx, JoystickPositiony);
+          checkLoose();
           lcd.write(byte(1));
           lcd.setCursor(JoystickPositionx - 1, JoystickPositiony);
           lcd.print(SpazioVuoto);
@@ -181,10 +171,11 @@ void Destra_sinistra(){
 
 
 
- if(analogRead(x) > 700){
+ if(analogRead(x) < 300){
          JoystickPositionx = JoystickPositionx - 1;
          delay(200);
          lcd.setCursor(JoystickPositionx, JoystickPositiony);
+         checkLoose();
          lcd.write(byte(1));
          lcd.setCursor(JoystickPositionx + 1, JoystickPositiony);
          lcd.print(SpazioVuoto);
@@ -209,18 +200,22 @@ void Destra_sinistra(){
 
 void salta(){
    int y = analogRead(JOYSTICK_Y);
-     if(analogRead(y) <  400){
+     if(analogRead(y) >  600){
                         JoystickPositiony = 0;
                         lcd.setCursor(JoystickPositionx, JoystickPositiony);
+                        checkLoose();
                         lcd.write(byte(1));
+                        checkLoose();
                         lcd.setCursor(JoystickPositionx , 1);
                         lcd.print(SpazioVuoto);
     
     
      }
-     if (analogRead(y) > 600) {
+
+     if (analogRead(y) < 400) {
                          JoystickPositiony = 1;
                          lcd.setCursor(JoystickPositionx, JoystickPositiony);
+                         checkLoose();
                          lcd.write(byte(1));
                          lcd.setCursor(JoystickPositionx , 0);
                         lcd.print(SpazioVuoto);
@@ -232,22 +227,16 @@ void ContaPunti (){
   punteggio = punteggio + 1;
   lcd.setCursor(14, 1);
   lcd.print(punteggio);
-  if(punteggio == 100){
-    lcd.noDisplay();
-    lcd.display();
-    lcd.setCursor(7, 0);
-    lcd.print("HAI VINTO");
-  }
 }
 
 
 
-void playGameOverSound()
-{
-  tone(buzzerPin, NOTE_G4, 200);   // Suona la nota G4 per 200 millisecondi
-  delay(200);              // Pausa di 200 millisecondi
-  tone(buzzerPin, NOTE_A4, 200);   // Suona la nota A4 per 200 millisecondi
-  delay(200);              // Pausa di 200 millisecondi
+void playGameOverSound() {
+  if(contatore == 0){
+  tone(buzzerPin, NOTE_G4, 300);   // Suona la nota G4 per 300 millisecondi
+  delay(300);              // Pausa di 300 millisecondi
+  tone(buzzerPin, NOTE_A4, 300);   // Suona la nota A4 per 300 millisecondi
+  delay(300);              // Pausa di 300 millisecondi
   tone(buzzerPin, NOTE_F4, 400);   // Suona la nota F4 per 400 millisecondi
   delay(400);              // Pausa di 400 millisecondi
   tone(buzzerPin, NOTE_C4, 400);   // Suona la nota C4 per 400 millisecondi
@@ -258,4 +247,22 @@ void playGameOverSound()
   delay(300);              // Pausa di 300 millisecondi
   tone(buzzerPin, NOTE_B3, 600);   // Suona la nota B3 per 600 millisecondi
   delay(600);              // Pausa di 600 millisecondi
+  contatore = 1;
+ }
+}
+
+
+void checkLoose (){
+  if(((ObstaclePosition1 == JoystickPositionx) && (LastRandom1 == JoystickPositiony)) 
+        || ((ObstaclePosition2 == JoystickPositionx) && (LastRandom2 == JoystickPositiony))){
+           playGameOverSound();
+    lcd.clear();
+    lcd.setCursor(4, 0);
+    lcd.print("GAME OVER");
+      lcd.setCursor(4, 1);
+    lcd.print((punteggio) + String(" PUNTI"));
+    delay(8000);
+    lcd.clear();
+    lcd.noDisplay();
+  }
 }
